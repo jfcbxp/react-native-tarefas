@@ -8,27 +8,43 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { firebaseAuth } from "../../services/firebase.service";
-type Props = {};
+type Props = {
+  changeStatus: Function;
+};
 
 const Login = (props: Props) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLogin, setLogin] = useState(true);
 
   const handleLogin = () => {
-    firebaseAuth
-      .signInWithEmailAndPassword(email, password)
-      .then((result) => {})
-      .catch((error) => {
-        if (error.code === "auth/weak-password") {
-          alert("Senha informada invalida, digite uma senha mais forte.");
-        }
-        if (error.code === "auth/invalid-email") {
-          alert("Email invalido");
-        }
-        if (error.code === "auth/email-already-in-use") {
-          alert("Email já cadastrado");
-        }
-      });
+    if (isLogin) {
+      firebaseAuth
+        .signInWithEmailAndPassword(email, password)
+        .then((result) => {
+          props.changeStatus(result.user?.uid);
+        })
+        .catch((error) => {
+          alert("Erro ao efetuar login");
+        });
+    } else {
+      firebaseAuth
+        .createUserWithEmailAndPassword(email, password)
+        .then((result) => {
+          props.changeStatus(result.user?.uid);
+        })
+        .catch((error) => {
+          if (error.code === "auth/weak-password") {
+            alert("Senha informada invalida, digite uma senha mais forte.");
+          }
+          if (error.code === "auth/invalid-email") {
+            alert("Email invalido");
+          }
+          if (error.code === "auth/email-already-in-use") {
+            alert("Email já cadastrado");
+          }
+        });
+    }
   };
   return (
     <SafeAreaView style={styles.container}>
@@ -45,11 +61,21 @@ const Login = (props: Props) => {
         value={password}
         onChangeText={(text) => setPassword(text)}
       />
-      <TouchableOpacity style={styles.btnLogin} onPress={handleLogin}>
-        <Text style={styles.btnLoginText}>Acessar</Text>
+      <TouchableOpacity
+        style={[
+          styles.btnLogin,
+          { backgroundColor: isLogin ? "#3ea6f2" : "#141414" },
+        ]}
+        onPress={handleLogin}
+      >
+        <Text style={styles.btnLoginText}>
+          {isLogin ? "Acessar" : "Cadastrar"}
+        </Text>
       </TouchableOpacity>
-      <TouchableOpacity>
-        <Text style={{ textAlign: "center" }}>Criar uma conta</Text>
+      <TouchableOpacity onPress={() => setLogin((oldValue) => !oldValue)}>
+        <Text style={{ textAlign: "center" }}>
+          {isLogin ? "Criar uma conta" : "Já possuo uma conta"}
+        </Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -76,7 +102,6 @@ const styles = StyleSheet.create({
   btnLogin: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#141414",
     height: 45,
     marginBottom: 10,
   },
