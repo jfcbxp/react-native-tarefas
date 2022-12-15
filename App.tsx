@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   SafeAreaView,
   StyleSheet,
@@ -20,13 +20,25 @@ export default function App() {
   const [user, setUser] = useState("");
   const [newTask, setNewTask] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
+  const inputRef = useRef<TextInput>(null);
 
   const handleDelete = (item: Task) => {
-    alert("deletou");
+    realtime
+      .ref("tarefas")
+      .child(user)
+      .child(item.key)
+      .remove()
+      .then(() => {
+        let newTasks = tasks.filter((task) => task.key !== item.key);
+        setTasks(newTasks);
+      });
   };
 
   const handleEdit = (item: Task) => {
-    alert("editou");
+    //realtime.ref("tarefas").child(user).update({})
+    handleDelete(item);
+    setNewTask(item.nome);
+    inputRef.current?.focus();
   };
 
   const handleAdd = () => {
@@ -84,6 +96,7 @@ export default function App() {
             placeholder="O que vai fazer hoje?"
             value={newTask}
             onChangeText={(text) => setNewTask(text)}
+            ref={inputRef}
           />
           <TouchableOpacity style={styles.buttonAdd} onPress={handleAdd}>
             <Text style={styles.buttonAddText}>+</Text>
