@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   SafeAreaView,
   StyleSheet,
@@ -14,7 +14,7 @@ import {
 import Login from "./src/components/Login";
 import TaskListItem from "./src/components/TaskListItem";
 import { Task } from "./src/models/Task";
-import { realtime, firebaseAuth } from "./src/services/firebase.service";
+import { realtime } from "./src/services/firebase.service";
 
 export default function App() {
   const [user, setUser] = useState("");
@@ -53,6 +53,24 @@ export default function App() {
     <TaskListItem data={item} deleteItem={handleDelete} editItem={handleEdit} />
   );
   const keyItem: (item: Task) => string = (item: Task) => item.key.toString();
+
+  useEffect(() => {
+    if (user) {
+      realtime
+        .ref("tarefas")
+        .child(user)
+        .once("value", (snapshot) => {
+          setTasks([]);
+          snapshot.forEach((childItem) => {
+            let data: Task = {
+              key: childItem.key!,
+              nome: childItem.val().nome,
+            };
+            setTasks((oldValue) => [...oldValue, data]);
+          });
+        });
+    }
+  }, [user]);
 
   if (!user) {
     return <Login changeStatus={(user: string) => setUser(user)} />;
