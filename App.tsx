@@ -9,18 +9,48 @@ import {
   Text,
   FlatList,
   ListRenderItem,
+  Keyboard,
 } from "react-native";
 import Login from "./src/components/Login";
 import TaskListItem from "./src/components/TaskListItem";
 import { Task } from "./src/models/Task";
+import { realtime, firebaseAuth } from "./src/services/firebase.service";
 
 export default function App() {
   const [user, setUser] = useState("");
   const [newTask, setNewTask] = useState("");
-  const tasks: Task[] = [{ key: "1", nome: "Comprar coca cola" }];
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  const handleDelete = (item: Task) => {
+    alert("deletou");
+  };
+
+  const handleEdit = (item: Task) => {
+    alert("editou");
+  };
+
+  const handleAdd = () => {
+    if (newTask) {
+      let tarefas = realtime.ref("tarefas").child(user);
+      let chave = tarefas.push().key;
+
+      chave &&
+        tarefas
+          .child(chave)
+          .set({
+            nome: newTask,
+          })
+          .then((result) => {
+            let data: Task = { key: chave!, nome: newTask };
+            setTasks((oldValue) => [...oldValue, data]);
+            Keyboard.dismiss();
+            setNewTask("");
+          });
+    }
+  };
 
   const renderItem: ListRenderItem<Task> = ({ item }) => (
-    <TaskListItem data={item} />
+    <TaskListItem data={item} deleteItem={handleDelete} editItem={handleEdit} />
   );
   const keyItem: (item: Task) => string = (item: Task) => item.key.toString();
 
@@ -37,7 +67,7 @@ export default function App() {
             value={newTask}
             onChangeText={(text) => setNewTask(text)}
           />
-          <TouchableOpacity style={styles.buttonAdd}>
+          <TouchableOpacity style={styles.buttonAdd} onPress={handleAdd}>
             <Text style={styles.buttonAddText}>+</Text>
           </TouchableOpacity>
         </View>
